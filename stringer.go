@@ -20,13 +20,14 @@ import (
 	"go/importer"
 	"go/token"
 	"go/types"
-	"golang.org/x/tools/go/packages"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"golang.org/x/tools/go/packages"
 
 	"github.com/pascaldekloe/name"
 )
@@ -49,7 +50,7 @@ var (
 	yaml            = flag.Bool("yaml", false, "if true, yaml marshaling methods will be generated. Default: false")
 	text            = flag.Bool("text", false, "if true, text marshaling methods will be generated. Default: false")
 	output          = flag.String("output", "", "output file name; default srcdir/<type>_string.go")
-	transformMethod = flag.String("transform", "noop", "enum item name transformation method. Default: noop")
+	transformMethod = flag.String("transform", "noop", "enum item name transformation method(lower/kebab/snake). Default: noop")
 	trimPrefix      = flag.String("trimprefix", "", "transform each item name by removing a prefix. Default: \"\"")
 	lineComment     = flag.Bool("linecomment", false, "use line comment text as printed text when present")
 )
@@ -310,18 +311,21 @@ func (pkg *Package) check(fs *token.FileSet, astFiles []*ast.File) {
 }
 
 func (g *Generator) transformValueNames(values []Value, transformMethod string) {
-	var sep rune
 	switch transformMethod {
 	case "snake":
-		sep = '_'
+		for i := range values {
+			values[i].name = strings.ToLower(name.Delimit(values[i].name, '_'))
+		}
 	case "kebab":
-		sep = '-'
+		for i := range values {
+			values[i].name = strings.ToLower(name.Delimit(values[i].name, '-'))
+		}
+	case "lower":
+		for i := range values {
+			values[i].name = strings.ToLower(values[i].name)
+		}
 	default:
 		return
-	}
-
-	for i := range values {
-		values[i].name = strings.ToLower(name.Delimit(values[i].name, sep))
 	}
 }
 
